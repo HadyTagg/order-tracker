@@ -2,3 +2,8 @@
 .venv/
 env/
 venv/
+
+#.swp Files
+*.swp
+*.swo
+.*.swp
