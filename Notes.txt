@@ -1,2 +1,0 @@
-Build Command:
-pyinstaller --onefile --noconsole --icon "icon.ico" "order_tracker.py"
