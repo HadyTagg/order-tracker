@@ -25,11 +25,10 @@ jobs:
 
       - name: Build EXE
         run: |
-          pyinstaller --onefile --noconsole --icon "icon.ico" order_tracker.py
+          pyinstaller --onefile --noconsole --add-data "style.qss;." --icon "icon.ico" order_tracker.py
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
           path: dist/order_tracker.exe
-
