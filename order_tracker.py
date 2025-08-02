@@ -3,6 +3,10 @@ import sys
 import sqlite3
 
 
+DEFAULT_RESIDENTS = [
+]
+
+
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -29,16 +33,45 @@ class MainWindow(QtWidgets.QMainWindow):
         c = conn.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS orders
                      (ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                     DATE TEXT, 
-                     OWNER TEXT, 
+                     DATE TEXT,
+                     OWNER TEXT,
                      ITEM TEXT,
                      DESCRIPTION TEXT,
                      QUANTITY TEXT,
-                     STATUS TEXT, 
-                     ARCHIVED INTEGER, 
+                     STATUS TEXT,
+                     ARCHIVED INTEGER,
                      NOTES TEXT)''')
+        c.execute('''CREATE TABLE IF NOT EXISTS residents
+                     (NAME TEXT PRIMARY KEY)''')
+        c.executemany(
+            "INSERT OR IGNORE INTO residents (NAME) VALUES (?)",
+            [(name,) for name in DEFAULT_RESIDENTS],
+        )
         conn.commit()
         conn.close()
+
+    @staticmethod
+    def get_residents():
+        conn = sqlite3.connect('order_data.db')
+        c = conn.cursor()
+        c.execute("SELECT NAME FROM residents ORDER BY NAME")
+        residents = [row[0] for row in c.fetchall()]
+        conn.close()
+        return residents
+
+    @staticmethod
+    def add_resident(name):
+        conn = sqlite3.connect('order_data.db')
+        c = conn.cursor()
+        c.execute("INSERT OR IGNORE INTO residents (NAME) VALUES (?)", (name,))
+        conn.commit()
+        conn.close()
+
+    def populate_residents(self, combo):
+        combo.clear()
+        combo.setEditable(True)
+        for name in self.get_residents():
+            combo.addItem(name)
 
     def load_data(self):
         self.main_table.clearContents()
@@ -121,9 +154,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def add_order(self):
         add_order_dialog = QtWidgets.QDialog(self)
         uic.loadUi('add_order_window.ui', add_order_dialog)
+        owner_combo = add_order_dialog.findChild(QtWidgets.QComboBox, 'owner_combo_box')
+        self.populate_residents(owner_combo)
 
         if add_order_dialog.exec_() == QtWidgets.QDialog.Accepted:
-            owner_combo_box = add_order_dialog.findChild(QtWidgets.QComboBox, 'owner_combo_box').currentText()
+            owner_combo_box = owner_combo.currentText()
             item_edit = add_order_dialog.findChild(QtWidgets.QTextEdit, 'item_edit').toPlainText()
             description_combo_box = add_order_dialog.findChild(QtWidgets.QComboBox,
                                                                'description_combo_box').currentText()
@@ -134,6 +169,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.critical(add_order_dialog, "Error", "Please fill in all required fields")
                 self.load_data()
                 return None
+            self.add_resident(owner_combo_box)
             conn = sqlite3.connect('order_data.db')
             c = conn.cursor()
             c.execute(
@@ -163,10 +199,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 edit_order_dialog = QtWidgets.QDialog(self)
                 uic.loadUi('edit_order_window.ui', edit_order_dialog)
-
+                owner_combo = edit_order_dialog.findChild(QtWidgets.QComboBox, 'owner_combo_box')
+                self.populate_residents(owner_combo)
+                if owner_combo.findText(data[2]) == -1:
+                    owner_combo.addItem(data[2])
+                owner_combo.setCurrentText(data[2])
                 edit_order_dialog.findChild(QtWidgets.QComboBox, 'status_combo_box').setCurrentText(data[6])
                 edit_order_dialog.findChild(QtWidgets.QDoubleSpinBox, 'quantity_spin_box').setValue(float(data[5]))
-                edit_order_dialog.findChild(QtWidgets.QComboBox, 'owner_combo_box').setCurrentText(data[2])
                 edit_order_dialog.findChild(QtWidgets.QComboBox, 'description_combo_box').setCurrentText(data[4])
                 edit_order_dialog.findChild(QtWidgets.QTextEdit, 'item_edit').setText(data[3])
 
