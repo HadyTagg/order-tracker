@@ -2,6 +2,16 @@ from PyQt5 import QtWidgets, uic, QtCore, QtGui
 import sys
 import sqlite3
 import os
+import os
+import sys
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        base_path = sys._MEIPASS  # temp folder used by PyInstaller
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 
 DEFAULT_RESIDENTS = [
@@ -414,10 +424,11 @@ def set_app_style(app):
     palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(42, 130, 218))
     palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.black)
     app.setPalette(palette)
-    style_path = os.path.join(os.path.dirname(__file__), "style.qss")
+    
+    style_path = resource_path("style.qss")
     with open(style_path, "r") as fh:
         app.setStyleSheet(fh.read())
-    app.setFont(QtGui.QFont("Segoe UI", 10))
+        app.setFont(QtGui.QFont("Segoe UI", 11))
 
 
 if __name__ == "__main__":
