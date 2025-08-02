@@ -23,6 +23,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.update_order_status_button.clicked.connect(self.update_order_status)
         self.archive_order_button.clicked.connect(self.archive_order)
         self.archived_orders_button.clicked.connect(self.archived_orders)
+        self.manage_residents_button.clicked.connect(self.manage_residents)
         self.update_notes_button.clicked.connect(self.update_notes)
         self.main_table.cellClicked.connect(self.show_notes)
         self.main_table.itemSelectionChanged.connect(self.clear_notes)
@@ -67,11 +68,24 @@ class MainWindow(QtWidgets.QMainWindow):
         conn.commit()
         conn.close()
 
+    @staticmethod
+    def delete_resident(name):
+        conn = sqlite3.connect('order_data.db')
+        c = conn.cursor()
+        c.execute("DELETE FROM residents WHERE NAME = ?", (name,))
+        conn.commit()
+        conn.close()
+
     def populate_residents(self, combo):
-        combo.clear()
-        combo.setEditable(True)
+        combo.clear
+        combo.setEditable(False)
         for name in self.get_residents():
             combo.addItem(name)
+
+    def populate_resident_list(self, list_widget):
+        list_widget.clear()
+        for name in self.get_residents():
+            list_widget.addItem(name)
 
     def load_data(self):
         self.main_table.clearContents()
@@ -151,6 +165,34 @@ class MainWindow(QtWidgets.QMainWindow):
         self.archived_orders_dialog.archived_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.archived_orders_dialog.archived_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 
+    def manage_residents(self):
+        dialog = QtWidgets.QDialog(self)
+        uic.loadUi('manage_residents_window.ui', dialog)
+        list_widget = dialog.findChild(QtWidgets.QListWidget, 'resident_list')
+        input_line = dialog.findChild(QtWidgets.QLineEdit, 'resident_input')
+        add_button = dialog.findChild(QtWidgets.QPushButton, 'add_resident_button')
+        delete_button = dialog.findChild(QtWidgets.QPushButton, 'delete_resident_button')
+
+        self.populate_resident_list(list_widget)
+
+        def do_add():
+            name = input_line.text().strip()
+            if name:
+                self.add_resident(name)
+                self.populate_resident_list(list_widget)
+                input_line.clear()
+
+        def do_delete():
+            item = list_widget.currentItem()
+            if item:
+                self.delete_resident(item.text())
+                self.populate_resident_list(list_widget)
+
+        add_button.clicked.connect(do_add)
+        delete_button.clicked.connect(do_delete)
+
+        dialog.exec_()
+
     def add_order(self):
         add_order_dialog = QtWidgets.QDialog(self)
         uic.loadUi('add_order_window.ui', add_order_dialog)
@@ -169,7 +211,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.critical(add_order_dialog, "Error", "Please fill in all required fields")
                 self.load_data()
                 return None
-            self.add_resident(owner_combo_box)
             conn = sqlite3.connect('order_data.db')
             c = conn.cursor()
             c.execute(
@@ -356,3 +397,4 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
     app.exec_()
+

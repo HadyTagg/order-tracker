@@ -114,6 +114,19 @@
      <string>Add</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="manage_residents_button">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>700</y>
+      <width>113</width>
+      <height>37</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Residents</string>
+    </property>
+   </widget>
    <widget class="QPushButton" name="archive_order_button">
     <property name="geometry">
      <rect>
@@ -194,6 +207,7 @@
  </widget>
  <tabstops>
   <tabstop>add_order_button</tabstop>
+  <tabstop>manage_residents_button</tabstop>
   <tabstop>archive_order_button</tabstop>
   <tabstop>archived_orders_button</tabstop>
   <tabstop>update_notes_button</tabstop>
@@ -203,3 +217,4 @@
  <resources/>
  <connections/>
 </ui>
+
