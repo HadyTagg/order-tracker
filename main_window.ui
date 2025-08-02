@@ -32,7 +32,7 @@
    <string>Order Tracker</string>
   </property>
   <property name="windowOpacity">
-   <double>11.000000000000000</double>
+   <double>1.0</double>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QTableWidget" name="main_table">

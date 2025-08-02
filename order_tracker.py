@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets, uic, QtCore, QtGui
 import sys
 import sqlite3
+import os
 
 
 DEFAULT_RESIDENTS = [
@@ -12,6 +13,8 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__()
         uic.loadUi('main_window.ui', self)
         self.setWindowIcon(QtGui.QIcon('icon.ico'))
+        self.main_table.verticalHeader().setVisible(False)
+        self.main_table.horizontalHeader().setStretchLastSection(True)
         self.show()
         self.create_table()
         self.load_data()
@@ -129,6 +132,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def load_archived_data(self):
         self.archived_orders_dialog.archived_table.clearContents()
         self.archived_orders_dialog.archived_table.setRowCount(0)
+        self.archived_orders_dialog.archived_table.verticalHeader().setVisible(False)
 
         conn = sqlite3.connect('order_data.db')
         c = conn.cursor()
@@ -393,8 +397,32 @@ class MainWindow(QtWidgets.QMainWindow):
             return False
 
 
+def set_app_style(app):
+    app.setStyle("Fusion")
+    palette = QtGui.QPalette()
+    palette.setColor(QtGui.QPalette.Window, QtGui.QColor(43, 43, 43))
+    palette.setColor(QtGui.QPalette.WindowText, QtCore.Qt.white)
+    palette.setColor(QtGui.QPalette.Base, QtGui.QColor(35, 35, 35))
+    palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(53, 53, 53))
+    palette.setColor(QtGui.QPalette.ToolTipBase, QtCore.Qt.white)
+    palette.setColor(QtGui.QPalette.ToolTipText, QtCore.Qt.white)
+    palette.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
+    palette.setColor(QtGui.QPalette.Button, QtGui.QColor(53, 53, 53))
+    palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
+    palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.red)
+    palette.setColor(QtGui.QPalette.Link, QtGui.QColor(42, 130, 218))
+    palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(42, 130, 218))
+    palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.black)
+    app.setPalette(palette)
+    style_path = os.path.join(os.path.dirname(__file__), "style.qss")
+    with open(style_path, "r") as fh:
+        app.setStyleSheet(fh.read())
+    app.setFont(QtGui.QFont("Segoe UI", 10))
+
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
+    set_app_style(app)
     window = MainWindow()
     app.exec_()
 

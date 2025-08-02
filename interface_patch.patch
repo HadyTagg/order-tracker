@@ -1,0 +1,264 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/main_window.ui b/main_window.ui
+index 4f0080f44383725251cbed2bffeb8f26a895954d..5f9ef917bfbdbcc24d31702840533105f6804808 100644
+--- a/main_window.ui
++++ b/main_window.ui
+@@ -10,51 +10,51 @@
+     <height>768</height>
+    </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>1104</width>
+     <height>768</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>1104</width>
+     <height>768</height>
+    </size>
+   </property>
+   <property name="windowTitle">
+    <string>Order Tracker</string>
+   </property>
+   <property name="windowOpacity">
+-   <double>11.000000000000000</double>
++   <double>1.0</double>
+   </property>
+   <widget class="QWidget" name="centralwidget">
+    <widget class="QTableWidget" name="main_table">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>701</width>
+       <height>691</height>
+      </rect>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>701</width>
+       <height>691</height>
+      </size>
+     </property>
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectRows</enum>
+     </property>
+     <property name="gridStyle">
+      <enum>Qt::SolidLine</enum>
+diff --git a/order_tracker.py b/order_tracker.py
+index 95506cae20346f50cc1929fcffcd337056ba9ffe..70755d039cfec76db8094f6f28c0b6063c95e16a 100644
+--- a/order_tracker.py
++++ b/order_tracker.py
+@@ -1,39 +1,42 @@
+ from PyQt5 import QtWidgets, uic, QtCore, QtGui
+ import sys
+ import sqlite3
++import os
+ 
+ 
+ DEFAULT_RESIDENTS = [
+ ]
+ 
+ 
+ class MainWindow(QtWidgets.QMainWindow):
+     def __init__(self):
+         super(MainWindow, self).__init__()
+         uic.loadUi('main_window.ui', self)
+         self.setWindowIcon(QtGui.QIcon('icon.ico'))
++        self.main_table.verticalHeader().setVisible(False)
++        self.main_table.horizontalHeader().setStretchLastSection(True)
+         self.show()
+         self.create_table()
+         self.load_data()
+ 
+         self.archived_orders_dialog = None
+ 
+         self.add_order_button.clicked.connect(self.add_order)
+         self.edit_order_button.clicked.connect(self.edit_order)
+         self.update_order_status_button.clicked.connect(self.update_order_status)
+         self.archive_order_button.clicked.connect(self.archive_order)
+         self.archived_orders_button.clicked.connect(self.archived_orders)
+         self.manage_residents_button.clicked.connect(self.manage_residents)
+         self.update_notes_button.clicked.connect(self.update_notes)
+         self.main_table.cellClicked.connect(self.show_notes)
+         self.main_table.itemSelectionChanged.connect(self.clear_notes)
+ 
+     @staticmethod
+     def create_table():
+         conn = sqlite3.connect('order_data.db')
+         c = conn.cursor()
+         c.execute('''CREATE TABLE IF NOT EXISTS orders
+                      (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                      DATE TEXT,
+                      OWNER TEXT,
+                      ITEM TEXT,
+@@ -107,50 +110,51 @@ class MainWindow(QtWidgets.QMainWindow):
+             self.main_table.setItem(row_position, 5, QtWidgets.QTableWidgetItem(item[5]))
+             self.main_table.setItem(row_position, 6, QtWidgets.QTableWidgetItem(item[6]))
+ 
+         conn.close()
+ 
+         self.main_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+         self.main_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+ 
+         green = QtGui.QColor(0, 255, 0)
+         red = QtGui.QColor(255, 0, 0)
+ 
+         for row in range(self.main_table.rowCount()):
+             status_item = self.main_table.item(row, 6)
+             if status_item.text() == "Complete":
+                 for col in range(self.main_table.columnCount()):
+                     cell = self.main_table.item(row, col)
+                     cell.setBackground(green)
+             elif status_item.text() == "Outstanding":
+                 for col in range(self.main_table.columnCount()):
+                     cell = self.main_table.item(row, col)
+                     cell.setBackground(red)
+ 
+     def load_archived_data(self):
+         self.archived_orders_dialog.archived_table.clearContents()
+         self.archived_orders_dialog.archived_table.setRowCount(0)
++        self.archived_orders_dialog.archived_table.verticalHeader().setVisible(False)
+ 
+         conn = sqlite3.connect('order_data.db')
+         c = conn.cursor()
+         c.execute("SELECT * FROM orders WHERE archived = 1")
+         archived_table_data = c.fetchall()
+         for item in archived_table_data:
+             row_position = self.archived_orders_dialog.archived_table.rowCount()
+             self.archived_orders_dialog.archived_table.insertRow(row_position)
+             self.archived_orders_dialog.archived_table.setItem(row_position, 0,
+                                                                QtWidgets.QTableWidgetItem(str(item[0])))
+             self.archived_orders_dialog.archived_table.setItem(row_position, 1, QtWidgets.QTableWidgetItem(item[1]))
+             self.archived_orders_dialog.archived_table.setItem(row_position, 2, QtWidgets.QTableWidgetItem(item[2]))
+             self.archived_orders_dialog.archived_table.setItem(row_position, 3, QtWidgets.QTableWidgetItem(item[3]))
+             self.archived_orders_dialog.archived_table.setItem(row_position, 4, QtWidgets.QTableWidgetItem(item[4]))
+             self.archived_orders_dialog.archived_table.setItem(row_position, 5, QtWidgets.QTableWidgetItem(item[5]))
+             self.archived_orders_dialog.archived_table.setItem(row_position, 6, QtWidgets.QTableWidgetItem(item[6]))
+ 
+         conn.close()
+ 
+         green = QtGui.QColor(0, 255, 0)
+         red = QtGui.QColor(255, 0, 0)
+ 
+         for row in range(self.archived_orders_dialog.archived_table.rowCount()):
+             status_item = self.archived_orders_dialog.archived_table.item(row, 6)
+             if status_item.text() == "Complete":
+@@ -371,30 +375,54 @@ class MainWindow(QtWidgets.QMainWindow):
+ 
+     def clear_notes(self):
+         if not self.main_table.selectedIndexes():
+             self.notes_edit.clear()
+ 
+     def clear_archived_notes(self):
+         if not self.archived_orders_dialog.archived_table.selectedIndexes():
+             self.archived_orders_dialog.archived_notes_edit.clear()
+ 
+     def verify(self):
+         password_dialog = QtWidgets.QDialog(self)
+         uic.loadUi('verify_window.ui', password_dialog)
+ 
+         if password_dialog.exec_() == QtWidgets.QDialog.Accepted:
+             password = password_dialog.findChild(QtWidgets.QLineEdit, "password_line_edit").text()
+             if password == "ilovehady":
+                 return True
+             else:
+                 QtWidgets.QMessageBox.critical(self, "Error", "Incorrect password")
+                 return False
+         else:
+             QtWidgets.QMessageBox.warning(self, "Warning", "Verification cancelled")
+             return False
+ 
+ 
++def set_app_style(app):
++    app.setStyle("Fusion")
++    palette = QtGui.QPalette()
++    palette.setColor(QtGui.QPalette.Window, QtGui.QColor(43, 43, 43))
++    palette.setColor(QtGui.QPalette.WindowText, QtCore.Qt.white)
++    palette.setColor(QtGui.QPalette.Base, QtGui.QColor(35, 35, 35))
++    palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(53, 53, 53))
++    palette.setColor(QtGui.QPalette.ToolTipBase, QtCore.Qt.white)
++    palette.setColor(QtGui.QPalette.ToolTipText, QtCore.Qt.white)
++    palette.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
++    palette.setColor(QtGui.QPalette.Button, QtGui.QColor(53, 53, 53))
++    palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
++    palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.red)
++    palette.setColor(QtGui.QPalette.Link, QtGui.QColor(42, 130, 218))
++    palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(42, 130, 218))
++    palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.black)
++    app.setPalette(palette)
++    style_path = os.path.join(os.path.dirname(__file__), "style.qss")
++    with open(style_path, "r") as fh:
++        app.setStyleSheet(fh.read())
++    app.setFont(QtGui.QFont("Segoe UI", 10))
++
++
+ if __name__ == "__main__":
+     app = QtWidgets.QApplication(sys.argv)
++    set_app_style(app)
+     window = MainWindow()
+     app.exec_()
+ 
+diff --git a/style.qss b/style.qss
+new file mode 100644
+index 0000000000000000000000000000000000000000..29c1bd5e721a517dab0e53e3e635a0c38ec9c3c4
+--- /dev/null
++++ b/style.qss
+@@ -0,0 +1,43 @@
++QMainWindow {
++    background-color: #2b2b2b;
++    color: #f0f0f0;
++    font-family: 'Segoe UI', sans-serif;
++}
++
++QTableWidget {
++    background-color: #3c3f41;
++    alternate-background-color: #323232;
++    color: #f0f0f0;
++    gridline-color: #6c6c6c;
++    selection-background-color: #556677;
++    selection-color: #ffffff;
++}
++
++QHeaderView::section {
++    background-color: #444444;
++    color: #f0f0f0;
++    padding: 4px;
++    border: 0px;
++}
++
++QPushButton {
++    background-color: #444444;
++    color: #ffffff;
++    border-radius: 4px;
++    padding: 6px 12px;
++}
++
++QPushButton:hover {
++    background-color: #555555;
++}
++
++QPushButton:pressed {
++    background-color: #333333;
++}
++
++QLineEdit, QTextEdit, QComboBox, QSpinBox, QDoubleSpinBox {
++    background-color: #2b2b2b;
++    color: #ffffff;
++    border: 1px solid #555555;
++    padding: 4px;
++}
+ 
+EOF
+)
